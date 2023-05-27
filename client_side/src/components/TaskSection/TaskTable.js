@@ -3,6 +3,7 @@ import { FaPencilAlt, FaTimes } from "react-icons/fa";
 import "../../Styles.css";
 import Header from "./Header";
 import AddTask from "../TaskSection/AddTask";
+import SummaryComponent from "./SummaryComponent";
 import jwt_decode from "jwt-decode";
 import { UserContext } from "../../App";
 import axios from "axios";
@@ -16,9 +17,12 @@ function TaskTable() {
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
+  const [newStatus,setNewStatus] = useState(false);
   const [user] = useContext(UserContext);
   const refid = user.accesstoken;
   const userid = jwt_decode(refid);
+
+  // SUMAARY
 
   const fetchTasks = async () => {
     try {
@@ -87,7 +91,29 @@ function TaskTable() {
     setNewDescription("");
     setNewDueDate("");
   };
-
+  const updateTaskStatus = async (task) => {
+    setSelectedTask(task);
+    console.log("Selected task:",selectedTask)
+    try {
+      const response = await fetch(`http://localhost:4000/updatestatus/${selectedTask.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      });
+      console.log("update status response",response)
+      if (response.ok) {
+        fetchTasks(); // Refresh the task list after updating status
+      } else {
+        console.log("Error updating task status:", response.status);
+      }
+    } catch (error) {
+      console.log("Error updating task status:", error);
+    }
+  };
   useEffect(() => {
     // deleteTask();
     fetchTasks();
@@ -111,6 +137,21 @@ function TaskTable() {
       sort: true,
     },
     {
+      dataField: "status",
+      text: "Status",
+      formatter: (cell, row) => {
+        const statusColor = row.status === true ? "green" : "red";
+        return (
+          <button
+            className={`status-button ${statusColor}`}
+            onClick={() => updateTaskStatus(row)}
+          >
+            {row.status===true ? "COMPLETED" : "PENDING"}
+          </button>
+        );
+      },
+    },
+    {
       dataField: "edit",
       text: "Edit",
       formatter: (cell, row) => (
@@ -126,6 +167,16 @@ function TaskTable() {
     },
   ];
 
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentMonthTasks = tasks.filter((task) => {
+    const taskDate = new Date(task.duedate);
+    const taskYear = taskDate.getFullYear();
+    const taskMonth = taskDate.getMonth() + 1;
+
+    return taskYear === currentYear && taskMonth === currentMonth;
+  });
   return (
     <>
       <div className="container-fluid h-100 mt-3 p-5">
@@ -136,24 +187,27 @@ function TaskTable() {
         {showAddTask && <AddTask fetchTasks={fetchTasks} />}
         <p className="text-white">Number of tasks: {tasks.length}</p>
         {tasks.length > 0 ? (
-          <BootstrapTable
-            keyField="id"
-            data={tasks}
-            columns={columns}
-            bootstrap4
-            condensed
-            bordered={false}
-            pagination={paginationFactory()}
-          />
+          <>
+            <BootstrapTable
+              keyField="id"
+              data={tasks}
+              columns={columns}
+              bootstrap4
+              condensed
+              bordered={false}
+              pagination={paginationFactory()}
+            />
+          </>
         ) : (
-          <div className="alert alert-warning mt-3" role="alert">
+          <div className="alert alert-danger mt-3" role="alert">
             No task found!
           </div>
         )}
+
         {selectedTask && (
           <div>
             <div className="shadow-lg p-3 mt-5 bg-dark rounded form p-5">
-              <form >
+              <form>
                 <h3 className="text-white mb-4">Update Task</h3>
                 <div className="form-group mt-2 text-white">
                   <label>Title</label>
@@ -194,20 +248,41 @@ function TaskTable() {
                     autoComplete="newDueDate"
                   />
                 </div>
-                  <button
-                    className="btn btn-success mt-2 px-4"
-                    onClick={updateTask}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="btn btn-danger mt-2 mx-3 px-4"
-                    onClick={cancelEdit}
-                  >
-                    Cancel
-                  </button>
+                <button
+                  className="btn btn-success mt-3 px-4"
+                  onClick={updateTask}
+                >
+                  Save
+                </button>
+                {/* <button
+                  className="btn btn-danger mt-2 mx-3 px-4"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </button> */}
               </form>
             </div>
+            {currentMonthTasks.length > 0 ? (
+              <>
+                <h3 className="text-white mt-4">Tasks deadline in current month</h3>
+                <p className="text-white">
+                  Number of tasks: {currentMonthTasks.length}
+                </p>
+                <BootstrapTable
+                  keyField="id"
+                  data={currentMonthTasks}
+                  columns={columns}
+                  bootstrap4
+                  condensed
+                  bordered={false}
+                  pagination={paginationFactory()}
+                />
+              </>
+            ) : (
+              <div className="alert alert-danger mt-3" role="alert">
+                No task found for currentMonth!
+              </div>
+            )}
           </div>
         )}
       </div>

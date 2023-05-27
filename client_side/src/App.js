@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Router, navigate } from "@reach/router";
-import Swal from "sweetalert2"
+import Swal from "sweetalert2";
 // import Navigation from "./components/Navigation";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -63,7 +63,7 @@ function App() {
           <Protected path="protected" logOutCallback={logOutCallback} />
           <Content path="/" />
           <Dashboard path="/dashboard"></Dashboard>
-          <Profile path="protected/profile"/>
+          <Profile path="protected/profile" />
         </Router>
       </>
     </UserContext.Provider>

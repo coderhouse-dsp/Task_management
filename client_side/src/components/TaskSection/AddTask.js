@@ -1,12 +1,19 @@
 import React, { useState, useContext } from "react";
 import Swal from "sweetalert2";
 import { UserContext } from "../../App";
-import {fetchTasks} from "./TaskTable"
+import { fetchTasks } from "./TaskTable";
+import "../../../node_modules/bootstrap/dist/css/bootstrap.css";
+import "../../../node_modules/bootstrap/dist/js/bootstrap.js";
+import "../../Styles.css";
+
 function AddTask(props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [duedate, setDueDate] = useState("");
+  const [status, setStatus] = useState("pending"); // New status state
+
   const user = useContext(UserContext);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !description || !duedate) {
@@ -16,7 +23,6 @@ function AddTask(props) {
         text: "Fill up all the fields to add task",
       });
     } else {
-      console.log("add task user:", user[0].accesstoken);
       const result = await (
         await fetch("http://localhost:4000/addtask", {
           method: "POST",
@@ -29,6 +35,7 @@ function AddTask(props) {
             title: title,
             description: description,
             duedate: duedate,
+            status: status, // Include status in the request body
           }),
         })
       ).json();
@@ -38,9 +45,9 @@ function AddTask(props) {
           title: "Yayy!!!",
           text: result.message,
         });
-        setTitle('')
-        setDescription('')
-        setDueDate('')
+        setTitle("");
+        setDescription("");
+        setDueDate("");
         props.fetchTasks();
       } else {
         Swal.fire({
@@ -51,22 +58,24 @@ function AddTask(props) {
       }
     }
   };
+
   const handleChange = (e) => {
     if (e.currentTarget.name === "title") {
       setTitle(e.currentTarget.value);
     } else if (e.currentTarget.name === "description") {
       setDescription(e.currentTarget.value);
-    } else {
+    } else if (e.currentTarget.name === "duedate") {
       setDueDate(e.currentTarget.value);
     }
   };
+
   return (
     <>
       <div className="container shadow-lg p-3 mb-5 bg-dark rounded form mt-5 p-5">
         <form onSubmit={handleSubmit}>
           <h2 className="text-white">AddTask</h2>
           <div className="form-group mt-2 text-white">
-            <label >Title</label>
+            <label>Title</label>
             <input
               className="form-control mt-2 bg-dark text-white"
               aria-describedby="emailHelp"
@@ -79,10 +88,9 @@ function AddTask(props) {
             />
           </div>
           <div className="form-group mt-2 text-white">
-            <label >Description</label>
+            <label>Description</label>
             <input
               className="form-control mt-2 bg-dark text-white"
-              
               aria-describedby="emailHelp"
               value={description}
               onChange={handleChange}
@@ -93,7 +101,7 @@ function AddTask(props) {
             />
           </div>
           <div className="form-group mt-2 text-white">
-            <label >Due Date</label>
+            <label>Due Date</label>
             <input
               className="form-control mt-2 bg-dark text-white"
               aria-describedby="emailHelp"
@@ -105,8 +113,20 @@ function AddTask(props) {
               autoComplete="duedate"
             />
           </div>
-          <button type="submit" className="btn btn-warning mt-3 ">
-            Addtask
+          {/* New status field */}
+          <div className="form-group mt-2 text-white">
+            <label>Status</label>
+            <select
+              className="form-control mt-2 bg-dark text-white"
+              value={status}
+              onChange={(e) => setStatus(e.currentTarget.value)}
+            >
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-warning mt-3">
+            Add Task
           </button>
         </form>
       </div>

@@ -17,6 +17,17 @@ const jwt = require("jsonwebtoken");
 const server = express();
 
 // Use express middleware for easier cookie handling
+const allowedOrigins = ['http://localhost:3000']; // Add any other allowed origins as needed
+
+server.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+}));
 
 server.use(cookieParser());
 server.use(
@@ -187,8 +198,8 @@ server.post("/refresh_token", async (req, res) => {
 
 server.post("/addtask", async (req, res) => {
   try {
-    const { refid, title, description, duedate } = req.body;
-    console.log("Add task values:", refid, title, description, duedate);
+    const { refid, title, description, duedate,status } = req.body;
+    console.log("Add task values:", refid, title, description, duedate,status);
     const userid = jwt.decode(refid);
     console.log("Decoded userid:", userid);
     const newTask = await TaskData.create({
@@ -196,6 +207,7 @@ server.post("/addtask", async (req, res) => {
       title,
       description,
       duedate,
+      status
     });
     console.log("Task added check:", newTask);
     res.status(200).json({ message: "Task added successfully", task: newTask });
@@ -330,6 +342,24 @@ server.put("/protected/profile/:userid",async(req,res)=>{
     res.status(500).json({error:"An error occurred while fetching user's details"})
   }
 })
+
+// 12. Update task status
+
+server.put("/updatestatus/:taskId",async(req,res)=>{
+  const {taskId} = req.params
+  const {status} = req.body;
+
+  const task = await TaskData.findByPk(taskId);
+  if(!task)
+  {
+    res.status(404).json({error:"Task not found"})
+  }
+  task.status = status
+  await task.save();
+  console.log("Task:",task)
+  return res.status(200).json({message:"Task status updated successfully!"})
+})
+
 server.listen(process.env.PORT, () => {
   console.log(`server listening on port ${process.env.PORT}`);
 });

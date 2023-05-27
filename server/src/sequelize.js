@@ -70,6 +70,10 @@ const TaskData = connection.define("taskdata",{
   duedate:{
     type:DataTypes.DATE,
     allowNull:false
+  },
+  status:{
+    type:DataTypes.TEXT,
+    allowNull:true
   }
 },{
   connection,

@@ -86,3 +86,23 @@
   transform: translateY(-50%);
   background: #1a1a1b;
 }
+.dropdown{
+  background: #464646;
+  color: white;
+  border-radius: 8px;
+  padding:7px;
+}
+.status-button {
+  padding: 5px 10px;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.status-button.green {
+  background-color: green;
+}
+
+.status-button.red {
+  background-color: red;
+}
