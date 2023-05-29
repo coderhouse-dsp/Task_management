@@ -17,11 +17,12 @@ function TaskTable() {
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
-  const [newStatus,setNewStatus] = useState(false);
+  const [newStatus, setNewStatus] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const [user] = useContext(UserContext);
   const refid = user.accesstoken;
   const userid = jwt_decode(refid);
-
+  const green  = "#198754"
   // SUMAARY
 
   const fetchTasks = async () => {
@@ -93,18 +94,22 @@ function TaskTable() {
   };
   const updateTaskStatus = async (task) => {
     setSelectedTask(task);
-    console.log("Selected task:",selectedTask)
+    const newStatusValue = searchValue === "PENDING" ? true : false; // Set the new status based on the selected dropdown value
+    console.log("Selected task:", selectedTask);
     try {
-      const response = await fetch(`http://localhost:4000/updatestatus/${selectedTask.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: newStatus,
-        }),
-      });
-      console.log("update status response",response)
+      const response = await fetch(
+        `http://localhost:4000/updatestatus/${selectedTask.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatusValue,
+          }),
+        }
+      );
+      console.log("update status response", response);
       if (response.ok) {
         fetchTasks(); // Refresh the task list after updating status
       } else {
@@ -146,7 +151,7 @@ function TaskTable() {
             className={`status-button ${statusColor}`}
             onClick={() => updateTaskStatus(row)}
           >
-            {row.status===true ? "COMPLETED" : "PENDING"}
+            {row.status === true ? "COMPLETED" : "PENDING"}
           </button>
         );
       },
@@ -185,12 +190,33 @@ function TaskTable() {
           changeTextAndColor={showAddTask}
         />
         {showAddTask && <AddTask fetchTasks={fetchTasks} />}
-        <p className="text-white">Number of tasks: {tasks.length}</p>
+        <div className="row mt-3">
+          <div className="col-md-2">
+            <p className="text-white">Number of tasks: {tasks.length}</p>
+          </div>
+          <div className="col-md-auto">
+            <select
+              id="dropdown"
+              className="form-control mb-2"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            >
+              <option value="">Search using TaskStatus</option>
+              <option value="PENDING">Pending</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+        </div>
         {tasks.length > 0 ? (
           <>
             <BootstrapTable
               keyField="id"
-              data={tasks}
+              data={tasks.filter(
+                (task) =>
+                  searchValue === "" ||
+                  (searchValue === "PENDING" && !task.status) ||
+                  (searchValue === "COMPLETED" && task.status)
+              )}
               columns={columns}
               bootstrap4
               condensed
@@ -264,7 +290,9 @@ function TaskTable() {
             </div>
             {currentMonthTasks.length > 0 ? (
               <>
-                <h3 className="text-white mt-4">Tasks deadline in current month</h3>
+                <h3 className="text-white mt-4">
+                  Tasks deadline in current month
+                </h3>
                 <p className="text-white">
                   Number of tasks: {currentMonthTasks.length}
                 </p>

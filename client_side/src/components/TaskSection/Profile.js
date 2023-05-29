@@ -4,11 +4,27 @@ import { UserContext } from "../../App";
 import "../../Styles.css"
 import Swal from "sweetalert2";
 import axios from "axios";
+import { Link } from "@reach/router";
 import ProfileHeader from "./ProfileHeader";
 function Profile() {
   const [user] = useContext(UserContext);
   const [client, setClient] = useState(user);
   const [showEditProfile, setShowEDitProfile] = useState(false);
+
+
+  const sendMail = async()=>{
+    try{
+      axios.get("http://localhost:4000/send-email",{
+        headers:{
+          Authorization: `Bearer ${user.accesstoken}`,
+        }
+      })
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,7 +44,7 @@ function Profile() {
         console.error(error);
       }
     };
-
+    sendMail();
     fetchData();
   }, []);
 
@@ -70,6 +86,12 @@ function Profile() {
             <p className="text-warning">{client.email}</p>
           </div>
           <div className="p-3">
+          <button
+            className="btn btn-warning my-2"
+            type="submit"
+          >
+            <Link to="/protected" className="text-decoration-none p-2" id="link_text_btn">Back</Link>
+          </button>
             <ProfileHeader
               showForm={() => setShowEDitProfile(!showEditProfile)}
               changeTextAndColor={showEditProfile}

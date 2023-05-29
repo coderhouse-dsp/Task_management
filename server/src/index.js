@@ -13,22 +13,26 @@ const {
 const { isAuth } = require("./isAuth");
 const { connection, UserData, TaskData } = require("./sequelize");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 // const {Sequelize, DataTypes} = require('sequelize');
 const server = express();
 
 // Use express middleware for easier cookie handling
-const allowedOrigins = ['http://localhost:3000']; // Add any other allowed origins as needed
+const allowedOrigins = ["http://localhost:3000"]; // Add any other allowed origins as needed
 
-server.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-}));
-
+server.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // Set the credentials option to true
+  })
+);
+server.options("*", cors()); // Enable preflight requests for all routes
 server.use(cookieParser());
 server.use(
   cors({
@@ -49,6 +53,73 @@ connection
   .catch((err) => {
     console.log("Unable to connect to the database:", err);
   });
+
+// send a mail
+
+server.get("/send-email", async (req, res) => {
+  try {
+    const nextDay = new Date();
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    console.log(nextDay);
+
+    const tasks = await TaskData.findAll({
+      where: {
+        duedate: nextDay,
+      },
+    });
+    console.log("Tasks:", tasks);
+    const emailcontent = tasks
+      .map(
+        (task) =>
+          `Task Title:${task.title}\n Task Description:${task.description}\n Task DueDate:${task.duedate}`
+      )
+      .join("\n");
+    console.log("emailContent:", emailcontent);
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+
+      auth: {
+        user: "4techusage@gmail.com",
+        pass: "stcrltmkozgtipzc",
+      },
+    });
+    const token = req.headers.authorization.split(" ")[1];
+
+    // Verify the access token
+    const payload = verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+    // Find the user in the database based on the decoded user ID
+    const loggedInUser = await UserData.findOne({
+      where: {
+        userid: payload.userId,
+      },
+    });
+
+    if (!loggedInUser) {
+      throw new Error("User not found");
+    }
+
+    // Return the user's details
+    // res.json({ loggedInUser });
+    const mailOptions = {
+      from: "4techusage@gmail.com", // Sender's email address
+      to: `${loggedInUser.email}`, // Recipient's email address
+      subject: "Task Reminder",
+      text: `The following tasks are due tomorrow:\n\n${emailcontent}`,
+    };
+    await transporter.sendMail(mailOptions);
+    console.log("Mail options sent:", mailOptions);
+    res.status(200).json({ message: "Email notifications sent successfully." });
+  } catch (err) {
+    console.error("Error sending email notifications:", err);
+    res
+      .status(500)
+      .json({ error: "An error occurred while sending email notifications." });
+  }
+});
 
 // 1.Register a user
 
@@ -174,7 +245,7 @@ server.post("/refresh_token", async (req, res) => {
   });
   if (!user) return res.send({ accesstoken: "" });
   // user exist, check if refreshtoken exist on user
-  console.log("Pritend user:",user)
+  console.log("Pritend user:", user);
   if (req.cookies.refreshtoken !== token) {
     console.log("I am an error");
     return res.send({ accesstoken: "" });
@@ -198,8 +269,8 @@ server.post("/refresh_token", async (req, res) => {
 
 server.post("/addtask", async (req, res) => {
   try {
-    const { refid, title, description, duedate,status } = req.body;
-    console.log("Add task values:", refid, title, description, duedate,status);
+    const { refid, title, description, duedate, status } = req.body;
+    console.log("Add task values:", refid, title, description, duedate, status);
     const userid = jwt.decode(refid);
     console.log("Decoded userid:", userid);
     const newTask = await TaskData.create({
@@ -207,7 +278,7 @@ server.post("/addtask", async (req, res) => {
       title,
       description,
       duedate,
-      status
+      status,
     });
     console.log("Task added check:", newTask);
     res.status(200).json({ message: "Task added successfully", task: newTask });
@@ -270,7 +341,7 @@ server.put("/:taskId", async (req, res) => {
 
   try {
     const task = await TaskData.findByPk(taskId);
-    console.log("put task:",task)
+    console.log("put task:", task);
     if (!task) {
       return res.status(404).json({ error: "Task not found" });
     }
@@ -293,21 +364,21 @@ server.get("/protected/profile", async (req, res) => {
   try {
     // Extract the access token from the request headers
     const token = req.headers.authorization.split(" ")[1];
-    
+
     // Verify the access token
     const payload = verify(token, process.env.ACCESS_TOKEN_SECRET);
-    
+
     // Find the user in the database based on the decoded user ID
     const user = await UserData.findOne({
       where: {
         userid: payload.userId,
       },
     });
-    
+
     if (!user) {
       throw new Error("User not found");
     }
-    
+
     // Return the user's details
     res.json({ user });
   } catch (err) {
@@ -317,15 +388,14 @@ server.get("/protected/profile", async (req, res) => {
 
 // 11. Update user's profile
 
-server.put("/protected/profile/:userid",async(req,res)=>{
-  const {userid} = req.params;
-  const {firstname,lastname,email,password} = req.body;
+server.put("/protected/profile/:userid", async (req, res) => {
+  const { userid } = req.params;
+  const { firstname, lastname, email, password } = req.body;
 
-  try{
+  try {
     const user = await UserData.findByPk(userid);
-    if(!user)
-    {
-      return res.status(404).json({error: 'User not found'});
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
     const hashedpassword = await hash(password, 10);
     user.firstname = firstname;
@@ -334,31 +404,30 @@ server.put("/protected/profile/:userid",async(req,res)=>{
     user.password = hashedpassword;
     await user.save();
 
-    res.json({success: true,user});
+    res.json({ success: true, user });
+  } catch (error) {
+    console.log("Error fetching user:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching user's details" });
   }
-  catch(error)
-  {
-    console.log("Error fetching user:",error);
-    res.status(500).json({error:"An error occurred while fetching user's details"})
-  }
-})
+});
 
 // 12. Update task status
 
-server.put("/updatestatus/:taskId",async(req,res)=>{
-  const {taskId} = req.params
-  const {status} = req.body;
+server.put("/updatestatus/:taskId", async (req, res) => {
+  const { taskId } = req.params;
+  const { status } = req.body;
 
   const task = await TaskData.findByPk(taskId);
-  if(!task)
-  {
-    res.status(404).json({error:"Task not found"})
+  if (!task) {
+    res.status(404).json({ error: "Task not found" });
   }
-  task.status = status
+  task.status = status;
   await task.save();
-  console.log("Task:",task)
-  return res.status(200).json({message:"Task status updated successfully!"})
-})
+  console.log("Task:", task);
+  return res.status(200).json({ message: "Task status updated successfully!" });
+});
 
 server.listen(process.env.PORT, () => {
   console.log(`server listening on port ${process.env.PORT}`);

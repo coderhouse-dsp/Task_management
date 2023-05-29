@@ -86,12 +86,12 @@
   transform: translateY(-50%);
   background: #1a1a1b;
 }
-.dropdown{
+/* .dropdown{
   background: #464646;
   color: white;
   border-radius: 8px;
   padding:7px;
-}
+} */
 .status-button {
   padding: 5px 10px;
   color: white;
@@ -105,4 +105,18 @@
 
 .status-button.red {
   background-color: red;
+}
+#dropdown{
+  /* width: 200px; */
+  background: #ffc107;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.back_btn{
+  border: 2px solid red;
+}
+option{
+  font-weight: 600;
+  letter-spacing: 1px;
 }

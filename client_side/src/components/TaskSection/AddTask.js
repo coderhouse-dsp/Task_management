@@ -10,7 +10,7 @@ function AddTask(props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [duedate, setDueDate] = useState("");
-  const [status, setStatus] = useState("pending"); // New status state
+  const [status, setStatus] = useState(false); // New status state
 
   const user = useContext(UserContext);
 
@@ -121,8 +121,8 @@ function AddTask(props) {
               value={status}
               onChange={(e) => setStatus(e.currentTarget.value)}
             >
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
+              <option value={status}>Pending</option>
+              <option value={!status}>Completed</option>
             </select>
           </div>
           <button type="submit" className="btn btn-warning mt-3">
