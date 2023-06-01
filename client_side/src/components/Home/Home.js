@@ -1,17 +1,9 @@
 import React from "react";
 import { Link } from "@reach/router";
-import "../Styles.css";
-import "../../node_modules/bootstrap/dist/css/bootstrap.min.css";
-import "../../node_modules/bootstrap/dist/js/bootstrap.min.js";
-const Content = () => {
-  // Could have something here to check for the time when the accesstoken expires
-  // and then call the refresh_token endpoint to get a new accesstoken automatically
-  // const [user] = useContext(UserContext);
-  // if (!user.accesstoken) return (
-  //   <>
-  //     <div className='form'>Please log in here to go to hahaha</div>
-  //   </>
-  // )
+import "../Styles/Styles.css";
+import "../../../node_modules/bootstrap/dist/css/bootstrap.min.css";
+
+const Home = () => {
   return (
     <div className="container-fluid home p-5">
       <div className="">
@@ -46,4 +38,4 @@ const Content = () => {
   );
 };
 
-export default Content;
+export default Home;

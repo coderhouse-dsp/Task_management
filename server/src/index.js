@@ -13,6 +13,7 @@ const {
 const { isAuth } = require("./isAuth");
 const { connection, UserData, TaskData } = require("./sequelize");
 const jwt = require("jsonwebtoken");
+const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 // const {Sequelize, DataTypes} = require('sequelize');
 const server = express();
@@ -53,73 +54,6 @@ connection
   .catch((err) => {
     console.log("Unable to connect to the database:", err);
   });
-
-// send a mail
-
-server.get("/send-email", async (req, res) => {
-  try {
-    const nextDay = new Date();
-    nextDay.setDate(nextDay.getDate() + 1);
-
-    console.log(nextDay);
-
-    const tasks = await TaskData.findAll({
-      where: {
-        duedate: nextDay,
-      },
-    });
-    console.log("Tasks:", tasks);
-    const emailcontent = tasks
-      .map(
-        (task) =>
-          `Task Title:${task.title}\n Task Description:${task.description}\n Task DueDate:${task.duedate}`
-      )
-      .join("\n");
-    console.log("emailContent:", emailcontent);
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-
-      auth: {
-        user: "4techusage@gmail.com",
-        pass: "stcrltmkozgtipzc",
-      },
-    });
-    const token = req.headers.authorization.split(" ")[1];
-
-    // Verify the access token
-    const payload = verify(token, process.env.ACCESS_TOKEN_SECRET);
-
-    // Find the user in the database based on the decoded user ID
-    const loggedInUser = await UserData.findOne({
-      where: {
-        userid: payload.userId,
-      },
-    });
-
-    if (!loggedInUser) {
-      throw new Error("User not found");
-    }
-
-    // Return the user's details
-    // res.json({ loggedInUser });
-    const mailOptions = {
-      from: "4techusage@gmail.com", // Sender's email address
-      to: `${loggedInUser.email}`, // Recipient's email address
-      subject: "Task Reminder",
-      text: `The following tasks are due tomorrow:\n\n${emailcontent}`,
-    };
-    await transporter.sendMail(mailOptions);
-    console.log("Mail options sent:", mailOptions);
-    res.status(200).json({ message: "Email notifications sent successfully." });
-  } catch (err) {
-    console.error("Error sending email notifications:", err);
-    res
-      .status(500)
-      .json({ error: "An error occurred while sending email notifications." });
-  }
-});
 
 // 1.Register a user
 
@@ -176,7 +110,7 @@ server.post("/login", async (req, res) => {
     // 2. Compare crypted password and see if it check out.send error if not
     const valid = await compare(password, user.password);
     if (!valid) {
-      throw new Error("Password is incorrect");
+      throw new Error("Please check your username and password");
     }
     // 3. create Refresh- and access token
     const accesstoken = createAccessToken(user.userid);
@@ -337,7 +271,7 @@ server.delete("/:taskId", async (req, res) => {
 
 server.put("/:taskId", async (req, res) => {
   const { taskId } = req.params;
-  const { title, description, duedate } = req.body;
+  const { title, description, duedate,status } = req.body;
 
   try {
     const task = await TaskData.findByPk(taskId);
@@ -348,7 +282,7 @@ server.put("/:taskId", async (req, res) => {
     task.title = title;
     task.description = description;
     task.duedate = duedate;
-
+    task.status = status;
     await task.save();
 
     res.json({ success: true, task });
@@ -427,6 +361,75 @@ server.put("/updatestatus/:taskId", async (req, res) => {
   await task.save();
   console.log("Task:", task);
   return res.status(200).json({ message: "Task status updated successfully!" });
+});
+
+// 13. send a mail
+
+// Create a transporter
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "4techusage@gmail.com",
+    pass: "stcrltmkozgtipzc",
+  },
+});
+
+// Schedule the email sending process to run every day at 9 AM
+cron.schedule("21 12 * * *", async () => {
+  try {
+    const nextDay = new Date();
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    const tasks = await TaskData.findAll({
+      where: {
+        duedate: nextDay,
+      },
+    });
+
+    const emailContent = tasks
+      .map(
+        (task) =>
+          `Task Title: ${task.title}\nTask Description: ${task.description}\nTask Due Date: ${task.duedate}`
+      )
+      .join("\n");
+
+    const users = await UserData.findAll();
+
+    for (const user of users) {
+      const mailOptions = {
+        from: "4techusage@gmail.com",
+        to: user.email,
+        subject: "Task Reminder",
+        text: `The following tasks are due tomorrow:\n\n${emailContent}`,
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`Email sent to ${user.email}`);
+    }
+  } catch (error) {
+    console.error("Error sending email notifications:", error);
+  }
+});
+
+// 14. sort columns
+
+server.get("/taskdata", async (req, res) => {
+  const { column, direction } = req.query;
+
+  try {
+    const sortedData = await TaskData.findAll({
+      order: [[column, direction]],
+    });
+    res.json(sortedData);
+    console.log("sorted data:", sortedData);
+  } catch (error) {
+    console.log("error:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while sorting the data." });
+  }
 });
 
 server.listen(process.env.PORT, () => {

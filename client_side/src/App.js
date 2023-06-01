@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Router, navigate } from "@reach/router";
 import Swal from "sweetalert2";
-// import Navigation from "./components/Navigation";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import Protected from "./components/Protected";
-import Content from "./components/Content";
-import Dashboard from "./components/TaskSection/Dashboard";
-import Profile from "./components/TaskSection/Profile";
-// import Navbar from "./components/TaskSection/Navbar";
+import Login from "./components/Login/Login";
+import Register from "./components/Register/Register";
+import Protected from "./components/Protected/Protected";
+import Home from "./components/Home/Home";
+import Profile from "./components/TaskSection/Profile/Profile";
+
 export const UserContext = React.createContext([]);
 function App() {
   const [user, setUser] = useState({});
@@ -56,13 +54,13 @@ function App() {
   return (
     <UserContext.Provider value={[user, setUser]}>
       <>
-        {/* <Navigation logOutCallback={logOutCallback} /> */}
+
         <Router id="router">
           <Login path="login" />
           <Register path="register" />
           <Protected path="protected" logOutCallback={logOutCallback} />
-          <Content path="/" />
-          <Dashboard path="/dashboard"></Dashboard>
+          <Home path="/" />
+          
           <Profile path="protected/profile" />
         </Router>
       </>

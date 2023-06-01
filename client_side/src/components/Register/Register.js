@@ -1,73 +1,53 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState } from "react";
 import { navigate } from "@reach/router";
-import { UserContext } from "../App";
 import { Link } from "@reach/router";
 import Swal from "sweetalert2";
-const Login = () => {
-  const [user, setUser] = useContext(UserContext);
+import "../Styles/Styles.css";
+const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [firstname, setFisrtName] = useState("");
+  const [lastname, setLastName] = useState("");
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) {
+    if (!firstname || !lastname || !email || !password) {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: "Enter email",
-        confirmButtonColor: "#0d6efd",
-      });
-    } else if (!password) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Enter Password",
+        text: "I got it you are in hurry! But every Field is important!",
         confirmButtonColor: "#0d6efd",
       });
     } else {
       const result = await (
-        await fetch("http://localhost:4000/login", {
+        await fetch("http://localhost:4000/register", {
           method: "POST",
-          credentials: "include", // Needed to include the cookie
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            firstname: firstname,
+            lastname: lastname,
             email: email,
             password: password,
           }),
         })
       ).json();
-
-      if (result.accesstoken) {
-        setUser({
-          accesstoken: result.accesstoken,
-        });
-        Swal.fire({
-          icon: "success",
-          title: "Yay...",
-          text: "Logged in successfully!",
-          confirmButtonColor: "#008000",
-        });
-        navigate("/protected");
+      if (!result.error) {
+        console.log(result.message);
+        navigate("/");
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Oopss!!!",
-          text: result.error,
-          confirmButtonColor: "#0d6efd",
-        });
         console.log(result.error);
       }
     }
   };
 
-  useEffect(() => {
-  }, [user]);
-
   const handleChange = (e) => {
     if (e.currentTarget.name === "email") {
       setEmail(e.currentTarget.value);
+    } else if (e.currentTarget.name === "firstname") {
+      setFisrtName(e.currentTarget.value);
+    } else if (e.currentTarget.name === "lastname") {
+      setLastName(e.currentTarget.value);
     } else {
       setPassword(e.currentTarget.value);
     }
@@ -76,10 +56,38 @@ const Login = () => {
   return (
     <div className="container form mt-5 p-5">
       <form onSubmit={handleSubmit}>
-        <h2>Login</h2>
+        <h2>Register</h2>
         <hr></hr>
         <div className="form-group mt-4">
-          <label htmlFor="exampleInputEmail1">Email</label>
+          <label for="exampleInputEmail1">First Name</label>
+          <input
+            className="form-control mt-2"
+            id="exampleInputEmail1"
+            aria-describedby="emailHelp"
+            value={firstname}
+            onChange={handleChange}
+            type="text"
+            name="firstname"
+            placeholder="FirstName"
+            autoComplete="firstname"
+          />
+        </div>
+        <div className="form-group mt-2">
+          <label for="exampleInputEmail1">Last Name</label>
+          <input
+            className="form-control mt-2"
+            id="exampleInputEmail1"
+            aria-describedby="emailHelp"
+            value={lastname}
+            onChange={handleChange}
+            type="text"
+            name="lastname"
+            placeholder="LastName"
+            autoComplete="lastname"
+          />
+        </div>
+        <div className="form-group mt-2">
+          <label for="exampleInputEmail1">Email</label>
           <input
             className="form-control mt-2"
             id="exampleInputEmail1"
@@ -93,7 +101,7 @@ const Login = () => {
           />
         </div>
         <div className="form-group mt-2">
-          <label htmlFor="exampleInputEmail1">Password</label>
+          <label for="exampleInputEmail1">Password</label>
           <input
             className="form-control mt-2"
             id="exampleInputEmail1"
@@ -107,17 +115,18 @@ const Login = () => {
           />
         </div>
         <p className="mt-3">
-          Not signed up yet? &nbsp;
-          <Link to="/register" id="link_text">
-            Register here
+          Already Registered?
+          <Link to="/login" id="link_text">
+            {" "}
+            Log in here
           </Link>
         </p>
         <button type="submit" className="btn btn-warning mt-3">
-          Login
+          Register
         </button>
       </form>
     </div>
   );
 };
 
-export default Login;
+export default Register;

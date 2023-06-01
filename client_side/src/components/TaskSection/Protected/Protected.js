@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { UserContext } from '../App';
+import { UserContext } from '../../App';
 // import Navbar from './TaskSection/Navbar';
-import Dashboard from './TaskSection/Dashboard';
+import Dashboard from '../TaskSection/Dashboard';
 
 const Protected = ({logOutCallback}) => {
   // Could have something here to check for the time when the accesstoken expires

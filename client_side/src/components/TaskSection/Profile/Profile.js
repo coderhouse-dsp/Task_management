@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Redirect } from "@reach/router";
-import { UserContext } from "../../App";
-import "../../Styles.css"
+import { UserContext } from "../../../App";
+import "../../Styles/Styles.css"
 import Swal from "sweetalert2";
 import axios from "axios";
 import { Link } from "@reach/router";

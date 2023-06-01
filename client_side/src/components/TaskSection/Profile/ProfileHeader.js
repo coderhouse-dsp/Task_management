@@ -1,6 +1,5 @@
 import React from "react";
 import Button from "./Button";
-// import "../Leave/Leave.css";
 
 const ProfileHeader = ({ showForm, changeTextAndColor }) => {
   return (
